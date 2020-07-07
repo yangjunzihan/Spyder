@@ -1,0 +1,48 @@
+from lxml import etree
+import requests
+import csv
+import time
+
+
+def writetxt(item):
+    with open('Qfang.csv', 'a', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        try:
+            writer.writerow(item)
+        except:
+            print('写入错误')
+
+
+header = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 OPR/68.0.3618.173 (Edition B2)'
+}
+
+try:
+    qishi = int(input('起始页数'))
+    jieshu = int(input('结束页数'))
+    for x in range(qishi,jieshu):
+        start_url = f'https://beijing.qfang.com/garden/n{x}'
+        html = requests.get(start_url, header)
+        select = etree.HTML(html.text)
+        xiaoquliebiao = select.xpath('//*[@class="list-result"]/ul/li')
+        for xiaoqu in xiaoquliebiao:
+            mingcheng = xiaoqu.xpath('./div/div/a/text()')[0]
+            bankuai = xiaoqu.xpath('./div/div/p/a/text()')[0]
+
+            if xiaoqu.xpath('./div/div/span/text()'):
+                jiage = xiaoqu.xpath('./div/div/span/text()')[0]
+            else:
+                jiage = xiaoqu.xpath('//*[@class="none-price"]/text()')[0]
+
+            # try:
+            #     jiage = xiaoqu.xpath('./div/div/span/text()')[0]
+            # except:
+            #     jiage = xiaoqu.xpath('//*[@class="none-price"]/text()')[0]
+
+            dihzzi = xiaoqu.xpath('./div/div/div/text()')[0]
+            item = ['    名称：' + mingcheng, '    板块：' + bankuai, '    价格：' + jiage, '    地址：' + dihzzi]
+            writetxt(item)
+            time.sleep(0.5)
+            print('正在抓取：', mingcheng)
+except Exception as e:
+    print(' 提 取 数 据 异 常 ')
