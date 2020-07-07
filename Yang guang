@@ -1,0 +1,61 @@
+import requests
+import csv
+from lxml import etree
+import time
+
+"""
+东莞政务网数据抓取
+属于静态页面
+抓取用到了requests，csv，time，xpath技术
+http://wz.sun0769.com/political/index/politicsNewest?id=1&page=0
+
+"""
+# 构造一个UA身份牌反爬
+header = {
+    'user-agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 '
+        'Safari/537.36 OPR/68.0.3618.173 (Edition B2) '
+}
+
+
+# 保存数据的方法
+def writetxt(item):
+    with open('Data.csv', 'a', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        try:
+            writer.writerow(item)
+        except:
+            print('写入错误')
+
+
+# 设置2个可输入页面的值
+qishi = int(input('起始页数'))
+jieshu = int(input('结束页数'))
+for x in range(qishi, jieshu):
+    # 页面Url非固定
+    star_url = f"http://wz.sun0769.com/political/index/politicsNewest?id=1&page={x}"
+    # 提示正在爬取第几页数据
+    print(f'==========================正在爬取第{x}页数据==========================')
+    # 构造一个html请求
+    html = requests.get(star_url, header)
+    # 构造一个可供查询的装饰器
+    select = etree.HTML(html.text)
+    # 构造一个xpath查询表
+    huifuliebiao = select.xpath('//ul[@class="title-state-ul"]/li')
+    # 循环遍历这个数据表 将 huifuliebiao 数据挨个赋值给 liebiao
+    for liebiao in huifuliebiao:
+        bianhao = liebiao.xpath('./span/text()')[0]
+        zhuangtai = liebiao.xpath('./span/text()')[1]
+        biaoti = liebiao.xpath('./span/a/text()')[0]
+        shijian = liebiao.xpath('./span/text()')[2]
+        shijians = liebiao.xpath('./span/text()')[3]
+        # 将获取到的数据全部存储到item数组里
+        item = ['编号:' + bianhao + '      ', '状态:' + zhuangtai.replace('\n', '').replace(' ', '') + '      ',
+                '响应时间：' + shijian.replace('\n', '').replace(' ', '') + '      ', '问政时间:' + shijians + '      ',
+                '问政标题:' + biaoti]
+        # 调用写入数据方法将item写入数据表格
+        writetxt(item)
+        # 打印正在抓取当前数据
+        print('正在爬取数据-编号：' + bianhao)
+        # 延迟0.3秒抓取数据防止反爬
+        time.sleep(0.3)
