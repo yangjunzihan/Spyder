@@ -1,0 +1,77 @@
+import requests  # requests模块
+import re        # 正则模块
+import pprint    # 格式化输出模块
+
+""" python小视频爬取
+
+#requests
+#re      
+思路：
+    1.确定URL路径（链接地址）
+    2.发送请求 requests （泛数据）
+    3.解析数据
+    4.保存数据（数据库，本地文件）
+"""
+
+
+# 定义一个去特殊字符的方法
+def change_title(title):
+    pattern = re.compile(r"[\/\\\:\*\?\"\<\>\|]")
+    new_title = re.sub(pattern, "_", title)
+    return new_title
+
+
+# 定义一个页号
+page = 0
+
+while True:
+    page += 1
+    print('==========================正在爬取第{}页数据=========================='.format(str(page)))
+
+    # 确定url路径（链接地址，分析网页，网页结构，动静态网页）
+    base_url = 'https://v.6.cn/minivideo/getMiniVideoList.php?act=recommend&page={}&pagesize=30'.format(str(page))
+
+    # 定义钥匙信息
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 OPR/68.0.3618.173 (Edition B2)'
+    }
+
+    # 模拟一个网页请求（页面的地址，页面钥匙）
+    response = requests.get(url=base_url, headers=headers)
+
+    # 解析格式：JSON 数据（动态网页）
+    json_data = response.json()
+
+    pprint.pprint(json_data)
+
+    try:
+        # 解析数据
+        data_list = json_data['content']['list']
+        # print(data_listg)
+        # 遍历列表
+        for data in data_list:
+
+            # 保存视频标题 +尾缀
+            video_title = data['title'] + '.mp4'
+
+            # 保存视频链接
+            video_url = data['playurl']
+
+            # 打印视频标题，打印视频链接
+            print(video_title, video_url)
+
+            # 文件名称去特殊字符
+            new_title = change_title(video_title)
+
+            # 打印正在下载视频
+            print('正在下载视频', video_title)
+
+            # 请求一个视频数据（二进制）.content（提取二进制数据）
+            video_data = requests.get(url=video_url, headers=headers).content
+
+            # 文件写入地址，文件写入的名称，文件写入的方式  文件对象
+            with open('video\\' + new_title, mode='wb') as f:
+                f.write(video_data)
+                print('下载完成...\n')
+    except Exception as e:
+        break
