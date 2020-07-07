@@ -1,0 +1,48 @@
+import requests
+import os
+from bs4 import BeautifulSoup
+
+
+qishi = int(input('起始页数'))
+jieshu = int(input('结束页数'))
+for x in range(qishi, jieshu):
+    start_url = f'https://beijing.qfang.com/garden/n{x}'
+    print(f'==========================正在爬取第{x}页数据==============1============')
+    header = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36 OPR/69.0.3686.36 (Edition B2)'}
+
+    main_resp = requests.get(f"https://www.umei.cc/meinvtupian/meinvxiezhen/{x}.htm", headers=header)
+
+    main_resp.encoding = "utf-8"
+
+    # print(main_resp.text)
+
+    main_page = BeautifulSoup(main_resp.text, "html.parser")
+
+    try:
+        # main_page.find()       #查找
+        # main_page.find_all()   #查找全部
+
+        a_list = main_page.find("div", class_="TypeList").find_all("a", class_="TypeBigPics")
+        n = 1
+        for a in a_list:
+            child_url = a.get("href")
+            child_resp = requests.get(child_url)
+            child_resp.encoding = "utf-8"
+            # print(child_resp.text)
+            child_page = BeautifulSoup(child_resp.text, "html.parser")
+            # jpg_src = child_page.find("div", class_="ImageBody").find("img").get("src")
+            imgbody = child_page.find("div", class_="ImageBody")
+            img = imgbody.find("img")
+            if img:
+                jpg_src = img.get("src")
+                jpg_name = img.get("alt")
+                with open('images\\' + str(jpg_name) + ".jpg", mode="wb") as f:
+                    f.write(requests.get(jpg_src).content)
+                    print("{}下载完毕".format(jpg_name))
+
+                # print(a.get("href"))\
+                n += 1
+    except Exception as e:
+        print("爬取错误")
+        break
